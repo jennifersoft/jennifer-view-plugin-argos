@@ -1,0 +1,17 @@
+#argos-main {
+    position: relative;
+}
+
+#argos-main #datepicker {
+    position: absolute;
+    display: none;
+}
+
+#argos-main .chart-row {
+    margin: 20px 0px;
+    height: 300px;
+}
+
+#argos-main .chart-row div {
+    height: 100%;
+}

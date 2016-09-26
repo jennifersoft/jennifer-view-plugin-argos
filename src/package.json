@@ -1,0 +1,9 @@
+{
+  "title": "Synthetic Monitoring",
+  "description": "",
+  "version": null,
+  "mainUrl": "/plugin/argos",
+  "mainTpl": "tpl/index.vm",
+  "resources" : [ "res/index.css", "res/index.js" ],
+  "thumbnails": [ "img/jennifer.png", "img/dark.png" ]
+}

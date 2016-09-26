@@ -1,0 +1,119 @@
+<div id="argos-main">
+    <div class="row">
+        <div class="navbar">
+            <div class="inline">
+                Domain
+                <div id="combo_domain" class="combo">
+                    <a class="btn small">Select...</a>
+                    <a class="btn small toggle"><i class="icon-arrow2"></i></a>
+                    <ul>
+                        #foreach($domain in $domains)
+                        <li value="$domain.sid">$domain.shortName</li>
+                        #end
+                    </ul>
+                </div>
+            </div>
+
+            <div class="inline">
+                Site
+                <div id="combo_site" class="combo">
+                    <a class="btn small">No Data</a>
+                    <a class="btn small toggle"><i class="icon-arrow2"></i></a>
+                    <ul></ul>
+                </div>
+            </div>
+
+            <div class="inline">
+                <a id="btn_date" class="btn small"><span></span> <i class="icon-calendar"></i></a>
+            </div>
+
+            <div class="inline">
+                <a id="btn_search" class="btn small"><i class="icon-search"></i></a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row chart-row">
+        <div class="col col-5">
+            <div id="chart_section"></div>
+        </div>
+        <div class="col col-7">
+            <div id="chart_average"></div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div id="table_detail" class="xtable scroll" style="margin-top: 7px;">
+            <table class="table classic">
+                <thead>
+                    <tr>
+                        <th>Probe</th>
+                        <th>Server</th>
+                        <th>Front</th>
+                        <th>Collection Time</th>
+                        <th>Status</th>
+                        <th>Response (ms)</th>
+                        <th>DNS (ms)</th>
+                        <th>Socket (ms)</th>
+                        <th>Request (ms)</th>
+                        <th>First Byte (ms)</th>
+                        <th>Download (ms)</th>
+                        <th>Received packet (byte)</th>
+                        <th>Total Comp (calls)</th>
+                        <th>Fail Comp (calls)</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <script id="tpl_row" type="text/template">
+            <tr>
+                <td><!= equip_name !></td>
+                <td>
+                    <! if(tx_id_list.length > 0) { !>
+                    <a href="javascript:showServerData(<!= row.index !>)">Details (<!= tx_id_list.length !>)</a>
+                    <! } !>
+                </td>
+                <td>
+                    <! if(tx_id_list.length > 0) { !>
+                    <a href="javascript:showFrontData(<!= row.index !>)">Details</a>
+                    <! } !>
+                </td>
+                <td><!= measure_time !></td>
+                <td><!= result_status_str !></td>
+                <td align="right"><!= resp_time.toLocaleForJennifer() !></td>
+                <td align="right"><!= dns_time.toLocaleForJennifer() !></td>
+                <td align="right"><!= socket_time.toLocaleForJennifer() !></td>
+                <td align="right"><!= request_time.toLocaleForJennifer() !></td>
+                <td align="right"><!= first_byte_time.toLocaleForJennifer() !></td>
+                <td align="right"><!= download_time.toLocaleForJennifer() !></td>
+                <td align="right"><!= in_bytes.toLocaleForJennifer() !></td>
+                <td align="right"><!= n_total_component.toLocaleForJennifer() !></td>
+                <td align="right"><!= n_fail_component.toLocaleForJennifer() !></td>
+            </tr>
+        </script>
+
+        <script id="tpl_none" type="text/template">
+            <tr>
+                <td colspan="14" class="none" align="center">Data does not exist.</td>
+            </tr>
+        </script>
+    </div>
+
+    <div id="datepicker" class="datepicker">
+        <div class="head">
+            <div class="prev"><i class="icon-chevron-left"></i></div>
+            <div class="title"></div>
+            <div class="next"><i class="icon-chevron-right"></i></div>
+        </div>
+        <table class="body">
+            <tr>
+                <th>SU</th><th>MO</th><th>TU</th><th>WE</th><th>TH</th><th>FR</th><th>SA</th>
+            </tr>
+        </table>
+    </div>
+    <script id="tpl_date" type="text/template">
+        <td><!= date !></td>
+    </script>
+</div>
