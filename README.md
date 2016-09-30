@@ -1,4 +1,4 @@
-## Getting Started
+## Getting started
 
 You must modify the configuration file of the view server. (conf/server_view.conf)
 ```
