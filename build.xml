@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<project name="build">
+	<property name="jennifer.dir" value="/Users/alvin/Documents/Test/jennifer5/server.view/bin" />
+
+	<target name="stop">
+		<exec dir="${jennifer.dir}" executable="/bin/bash">
+			<arg value="shutdown_view.sh"/>
+		</exec>
+		<sleep seconds="1"/>
+	</target>
+	<target name="start">
+		<sleep seconds="1"/>
+		<exec dir="${jennifer.dir}" executable="/bin/bash">
+			<arg value="startup_view.sh"/>
+		</exec>
+	</target>
+</project>
