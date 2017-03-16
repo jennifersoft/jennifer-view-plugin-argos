@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <project name="build">
-	<property name="jennifer.dir" value="/Users/alvin/Documents/Test/jennifer5/server.view/bin" />
+	<property name="jennifer.dir" value="/Users/alvin/Documents/Test/jennifer5_build/server.view/bin" />
 
 	<target name="stop">
 		<exec dir="${jennifer.dir}" executable="/bin/bash">

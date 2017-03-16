@@ -15,15 +15,6 @@
             </div>
 
             <div class="inline">
-                Site
-                <div id="combo_site" class="combo">
-                    <a class="btn small">No Data</a>
-                    <a class="btn small toggle"><i class="icon-arrow2"></i></a>
-                    <ul></ul>
-                </div>
-            </div>
-
-            <div class="inline">
                 <a id="btn_date" class="btn small"><span></span> <i class="icon-calendar"></i></a>
             </div>
 
@@ -34,10 +25,10 @@
     </div>
 
     <div class="row chart-row">
-        <div class="col col-5">
-            <div id="chart_section"></div>
+        <div class="col col-3">
+            <div id="selectbox_site"></div>
         </div>
-        <div class="col col-7">
+        <div class="col col-9">
             <div id="chart_average"></div>
         </div>
     </div>
@@ -80,7 +71,7 @@
                     <a href="javascript:showFrontData(<!= row.index !>)">Details</a>
                     <! } !>
                 </td>
-                <td><!= measure_time !></td>
+                <td><!= new Date(measure_time).format("HH:ss") !></td>
                 <td><!= result_status_str !></td>
                 <td align="right"><!= resp_time.toLocaleForJennifer() !></td>
                 <td align="right"><!= dns_time.toLocaleForJennifer() !></td>
@@ -117,3 +108,11 @@
         <td><!= date !></td>
     </script>
 </div>
+
+<script>
+    window.theme = "$user.themeName";
+    window.message = {
+        sitemap: "$i18n.sitemap",
+        msg1: "$i18n.msg1"
+    };
+</script>

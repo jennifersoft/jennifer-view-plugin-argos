@@ -9,9 +9,9 @@
 
 #argos-main .chart-row {
     margin: 20px 0px;
-    height: 300px;
+    height: 250px;
 }
 
-#argos-main .chart-row div {
+#argos-main .chart-row #chart_average {
     height: 100%;
 }

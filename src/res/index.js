@@ -1,12 +1,5 @@
-var combo_domain, combo_site, layer_date, chart_section, chart_average, table_detail;
+var combo_domain, layer_date, chart_average, table_detail, selectbox_site;
 var site_info = {}, active_hour = new Date().getHours();
-
-var chart_styles = {
-    axisBorderColor : "#dcdcdc",
-    axisBorderWidth : 1,
-    axisBorderRadius : 5,
-    titleFontWeight : "bold"
-};
 
 var chart_names = {
     resp_time: "Response",
@@ -17,7 +10,24 @@ var chart_names = {
     download_time: "Download"
 };
 
-jui.ready([ "ui.combo", "ui.datepicker", "chart.builder", "grid.xtable" ], function(combo, datepicker, builder, xtable) {
+var chart_targets = [ "resp_time", "dns_time", "socket_time", "request_time", "first_byte_time", "download_time" ];
+
+var chart_colors = {
+    jennifer: {
+        area: [ "#cbcfd7", "#dfebfb", "#d7f2eb", "#e8ddf0", "#ffebbb" ],
+        line: [ "#666c9b", "#5d9ced", "#37bc9b", "#c6a9d9", "#ffce54" ],
+        grid: "#dcdcdc"
+    },
+    dark: {
+        area: [ "#23344e", "#3c5b84", "#265b4e", "#70627a", "#766232" ],
+        line: [ "#666c8b", "#5d9ced", "#37bc9b", "#c6a9d9", "#ffce54" ],
+        grid: "#464646"
+    }
+};
+
+jui.ready([ "ui.combo", "ui.datepicker", "chart.builder", "grid.xtable", "selectbox" ],
+    function(combo, datepicker, builder, xtable, selectbox) {
+
     combo_domain = combo("#combo_domain", {
         width: 150,
         event: {
@@ -27,8 +37,17 @@ jui.ready([ "ui.combo", "ui.datepicker", "chart.builder", "grid.xtable" ], funct
         }
     });
 
-    combo_site = combo("#combo_site", {
-        width: 200
+    selectbox_site = selectbox("#selectbox_site", {
+        title: window.message.sitemap,
+        type: "single",
+        width: "100%",
+        height: 250,
+        search: true,
+        event: {
+            select: function(data, e) {
+                updateDailyChart();
+            }
+        }
     });
 
     layer_date = datepicker("#datepicker", {
@@ -45,58 +64,9 @@ jui.ready([ "ui.combo", "ui.datepicker", "chart.builder", "grid.xtable" ], funct
         }
     });
 
-    chart_section = builder("#chart_section", {
-        padding : 0,
-        axis : [{
-            padding : {
-                left : 30,
-                top : 50,
-                right : 50,
-                bottom : 50
-            }
-        }],
-        brush : [{
-            type : "pie",
-            target : [ "dns_time", "socket_time", "request_time", "first_byte_time", "download_time" ],
-            showText : "outside",
-            active : "resp_time",
-            activeEvent : "click",
-            colors : [ 1, 2, 3, 4, 5 ],
-            format : function(k, v) {
-                var d = this.axis(0).data[0],
-                    t = d.dns_time + d.socket_time + d.resp_time + d.first_byte_time + d.download_time;
-
-                return chart_names[k] + " (" + Math.round((v / t) * 100) + "%)";
-            }
-        }],
-        widget : [{
-            type : "legend",
-            orient : "right",
-            align : "end",
-            format : function(k) {
-                return chart_names[k];
-            }
-        }],
-        event : {
-            click: function(obj, e) {
-                setHourlyChartTarget(obj.dataKey);
-            },
-            "chart.click": function(e) {
-                if(e.target.nodeName == "rect") {
-                    setHourlyChartTarget("resp_time");
-                }
-            },
-            "bg.click": function(e) {
-                if(e.target.nodeName == "rect") {
-                    setHourlyChartTarget("resp_time");
-                }
-            }
-        },
-        style : chart_styles,
-        render : false
-    });
-
     chart_average = builder("#chart_average", {
+        theme : window.theme,
+        height : 250,
         padding : {
             left : 30,
             top : 0,
@@ -105,49 +75,56 @@ jui.ready([ "ui.combo", "ui.datepicker", "chart.builder", "grid.xtable" ], funct
         },
         axis : [{
             x : {
-                type : "fullblock",
-                domain : function() {
-                    var res = [];
-
-                    for(var i = 0; i < 25; i++) {
-                        res.push((i < 10) ? "0" + i : "" + i);
-                    }
-
-                    return res;
-                },
-                line : true
+                type : "date",
+                domain : getTodayDates(),
+                interval : 1000 * 60 * 60,
+                format : "HH",
+                key : "date",
+                line : "dashed"
             },
             y : {
                 type : "range",
                 domain : function(d) {
-                    return getChartTarget(d.resp_time);
+                    return getChartTarget(d.resp_time + d.dns_time + d.socket_time + d.request_time + d.first_byte_time + d.download_time);
                 },
-                step : 4,
-                line : true,
-                orient : "right"
+                step : 4
             },
             padding : 50
         }],
         brush : [{
-            type : "column",
-            target : [ "resp_time" ],
-            activeEvent : "click",
-            active : active_hour
+            type : "stackarea",
+            target : chart_targets,
+            colors : chart_colors[window.theme].area,
+            line : false,
+            opacity : 0
+        }, {
+            type : "stackline",
+            target : chart_targets,
+            colors : chart_colors[window.theme].line,
+            opacity : 0
+        }, {
+            type : "stackarea",
+            target : chart_targets,
+            colors : chart_colors[window.theme].area,
+            line : false,
+            opacity : 1
+        }, {
+            type : "stackline",
+            target : chart_targets,
+            colors : chart_colors[window.theme].line,
+            opacity : 1
+        }, {
+            type : "focus",
+            start : -1,
+            end : -1
+        }, {
+            type : "selectbox"
         }],
         widget : [{
             type : "title",
-            text : "Hourly Response Time (ms)",
+            text : window.message.msg1 + "(ms)",
             align : "start",
             dx : 10
-        }, {
-            type : "tooltip",
-            all : true,
-            format : function(data, key) {
-                return {
-                    key: chart_names[key] + " Time",
-                    value: data[key].toLocaleForJennifer() + "ms"
-                }
-            }
         }],
         format : function(d) {
             if(typeof(d) == "number") {
@@ -157,12 +134,22 @@ jui.ready([ "ui.combo", "ui.datepicker", "chart.builder", "grid.xtable" ], funct
             return d;
         },
         event : {
-            click: function(d) {
-                active_hour = d.dataIndex;
-                updateMeasureTable();
+            click: function(obj) {
+                updateMeasureTable(obj.data.start, obj.data.end);
             }
         },
-        style : chart_styles,
+        style : {
+            axisBorderColor : chart_colors[window.theme].grid,
+            axisBorderWidth : 1,
+            axisBorderRadius : 5,
+            titleFontWeight : "bold",
+            lineBorderOpacity : 1,
+            areaBackgroundOpacity : 1,
+            focusBorderColor : "#9663f4",
+            focusBorderWidth : 2,
+            focusBackgroundOpacity : 0,
+            gridTickBorderSize : 0
+        },
         render : false
     });
 
@@ -189,7 +176,7 @@ jui.ready([ "ui.combo", "ui.datepicker", "chart.builder", "grid.xtable" ], funct
     $("#btn_date").on("click", function(e) {
         if($(layer_date.root).css("display") == "none") {
             $(layer_date.root).css({
-                left: 485,
+                left: 237,
                 top: 31
             }).show();
         } else {
@@ -201,135 +188,215 @@ jui.ready([ "ui.combo", "ui.datepicker", "chart.builder", "grid.xtable" ], funct
 
     $("#btn_search").on("click", function(e) {
         updateDailyChart();
-        updateHourlyChart();
-        updateMeasureTable();
     });
 
     updateSiteInfo();
 });
 
 function updateSiteInfo() {
-    $.get("/plugin/argos/daily", {
-        domain_id: combo_domain.getValue(),
-        time: layer_date.getTime()
-    }, function(list) {
-        $(combo_site.root).find("ul").html("");
+    $.get("/plugin/argos/sites", {
+        domain_id: combo_domain.getValue()
+    }, function(jsonStr) {
+        if(jsonStr == "") return;
 
-        if(list.length == 0) {
-            $(combo_site.root).find(".btn:first-child").html("No data");
-        } else {
-            for(var i = 0; i < list.length; i++) {
-                var k = list[i].site_code;
-                site_info[k] = list[i];
+        var list = eval(jsonStr),
+            items = [];
 
-                $(combo_site.root).find("ul").append("<li value='" + k + "'>" + list[i].site_name + "</li>")
-            }
+        for(var i = 0; i < list.length; i++) {
+            var k = (list[i].step_code == null) ? list[i].site_code : list[i].site_code + ":" + list[i].step_code,
+                name = (list[i].step_code == null) ? list[i].site_name : list[i].site_name + " (" + list[i].step_order + "." + list[i].step_name + ")";
+
+            site_info[k] = list[i];
+            items.push({
+                text: name,
+                value: k
+            });
         }
 
-        combo_site.reload();
+        selectbox_site.update(items);
     });
 }
 
 function updateDailyChart() {
-    var data = site_info[combo_site.getValue()];
-    if(!data) return;
+    var sitemap = getSitemapInfo(),
+        dates = getTodayDates();
 
-    chart_section.axis(0).update([ data ]);
-    chart_section.render();
-}
+    if(sitemap == null) return;
 
-function updateHourlyChart() {
-    var site_code = combo_site.getValue();
-    if(!site_code) return;
-
-    $.get("/plugin/argos/hourly", {
+    $.get("/plugin/argos/daily", {
         domain_id: combo_domain.getValue(),
-        site_code: site_code,
-        time: layer_date.getTime()
-    }, function(list) {
-        chart_average.axis(0).update(list);
+        from_time: dates[0] / 1000,
+        to_time: dates[1] / 1000
+    }, function(jsonStr) {
+        if(jsonStr == "") return;
+
+        var list = eval(jsonStr),
+            items = [];
+
+        for(var i = 0; i < list.length; i++) {
+            var d = list[i];
+
+            if(d.site_code == sitemap[0] && d.step_code == sitemap[1]) {
+                d.date = new Date(d.measure_time);
+
+                if(!d.resp_time) d.resp_time = 0;
+                if(!d.dns_time) d.dns_time = 0;
+                if(!d.socket_time) d.socket_time = 0;
+                if(!d.request_time) d.request_time = 0;
+                if(!d.first_byte_time) d.first_byte_time = 0;
+                if(!d.download_time) d.download_time = 0;
+
+                items.push(d);
+            }
+        }
+
+        chart_average.updateBrush(0, { opacity: 0 });
+        chart_average.updateBrush(1, { opacity: 0 });
+        chart_average.updateBrush(2, { colors: chart_colors[window.theme].area });
+        chart_average.updateBrush(3, { colors: chart_colors[window.theme].line });
+        chart_average.updateBrush(4, { start: -1, end: -1 });
+        chart_average.axis(0).update(items);
         chart_average.render();
     });
 }
 
-function updateMeasureTable() {
-    var site_code = combo_site.getValue();
-    if(!site_code) return;
+function updateMeasureTable(startFocus, endFocus) {
+    var sitemap = getSitemapInfo();
 
-    var time_ranges = getMeasureDates();
+    if(sitemap == null) return;
 
     $.get("/plugin/argos/measure", {
         domain_id: combo_domain.getValue(),
-        site_code: site_code,
-        stime: time_ranges[0],
-        etime: time_ranges[1]
-    }, function(list) {
-        table_detail.update(list);
+        from_time: startFocus.getTime() / 1000,
+        to_time: endFocus.getTime() / 1000
+    }, function(jsonStr) {
+        if(jsonStr == "") return;
+
+        var list = eval(jsonStr),
+            items = [];
+
+        for(var i = 0; i < list.length; i++) {
+            var d = list[i];
+
+            if(d.site_code == sitemap[0] && d.step_code == sitemap[1]) {
+                if(!d.tx_id_list) d.tx_id_list = [];
+                if(!d.resp_time) d.resp_time = 0;
+                if(!d.dns_time) d.dns_time = 0;
+                if(!d.socket_time) d.socket_time = 0;
+                if(!d.request_time) d.request_time = 0;
+                if(!d.first_byte_time) d.first_byte_time = 0;
+                if(!d.download_time) d.download_time = 0;
+                if(!d.in_bytes) d.in_bytes = 0;
+                if(!d.n_total_component) d.n_total_component = 0;
+                if(!d.n_fail_component) d.n_fail_component = 0;
+
+                items.push(d);
+            }
+        }
+
+        table_detail.update(items);
     });
+
+    setActiveDailyChartEffect(startFocus, endFocus);
 }
 
-function getTargetIndex(target) {
-    var index = 0,
-        targets = [
-            "resp_time",
-            "dns_time",
-            "socket_time",
-            "request_time",
-            "first_byte_time",
-            "download_time"
-        ];
+function setActiveDailyChartEffect(startFocus, endFocus) {
+    var newStartFocus = null,
+        newEndFocus = null,
+        data = chart_average.axis(0).data;
 
-    for(var i = 0; i < targets.length; i++) {
-        if(targets[i] == target) {
-            index = i;
-            break;
+    if(data.length == 0) return;
+
+    for(var i = 0; i < data.length; i++) {
+        if(newStartFocus == null) {
+            if (data[i].date.getTime() >= startFocus.getTime()) {
+                newStartFocus = data[i].date;
+            }
+        }
+
+        if(newEndFocus == null) {
+            if (data[i].date.getTime() >= endFocus.getTime()) {
+                newEndFocus = data[i].date;
+            }
         }
     }
 
-    return index;
+    chart_average.updateBrush(0, {
+        opacity: 0.4
+    });
+
+    chart_average.updateBrush(1, {
+        opacity: 0.4
+    });
+
+    chart_average.updateBrush(2, {
+        colors : function(data) {
+            if(data.date.getTime() >= startFocus.getTime() && data.date.getTime() < endFocus.getTime()) {
+                return chart_colors[window.theme].area;
+            }
+
+            return "transparent";
+        }
+    });
+
+    chart_average.updateBrush(3, {
+        colors : function(data) {
+            if(data.date.getTime() >= startFocus.getTime() && data.date.getTime() < endFocus.getTime()) {
+                return chart_colors[window.theme].line;
+            }
+
+            return "transparent";
+        }
+    });
+
+    chart_average.updateBrush(4, {
+        start: newStartFocus || startFocus,
+        end: newEndFocus || endFocus
+    });
+
+    chart_average.render();
 }
 
-function getMeasureDates() {
-    var now = new Date(layer_date.getTime());
-    now.setHours(active_hour);
+function getSitemapInfo() {
+    var sitemap = selectbox_site.getValue(),
+        site_code = null,
+        step_code = null;
 
-    console.log(new Date(now.getTime()).format("yyyymmdd HH:mm:ss"), new Date(now.getTime() + (1000 * 60 * 60)).format("yyyymmdd HH:mm:ss"));
-    return [ now.getTime(), now.getTime() + (1000 * 60 * 60) ]
+    if(sitemap == null) return null;
+
+    if(typeof(sitemap) == "string") {
+        var tokens = sitemap.split(":");
+        site_code = parseInt(tokens[0]);
+        step_code = parseInt(tokens[1]);
+    } else {
+        site_code = sitemap;
+    }
+
+    return [ site_code, step_code ];
 }
 
+function getTodayDates() {
+    var stime = layer_date.getTime();
+
+    return [
+        new Date(stime),
+        new Date(stime + 1000 * 60 * 60 * 24)
+    ];
+}
 function showServerData(index) {
     var data = table_detail.get(index).data,
-        time_ranges = getMeasureDates();
+        stime = layer_date.getTime();
 
-    jennifer.ui.getXivewPointList(combo_domain.getValue(), data.tx_id_list, time_ranges[0], time_ranges[1]);
+    jennifer.ui.getXivewPointList(
+        combo_domain.getValue(),
+        data.tx_id_list,
+        stime,
+        stime + (1000 * 60 * 60)
+    );
 }
 
 function showFrontData(index) {
     var data = table_detail.get(index).data;
 
     window.open("http://argos-demo.vivans.net/web/analysis/ComponentAnalDetail:popup.argos?txid=" + data.tx_id_list[0], "argosDetailPopup", "scrollbars=yes,toolbar=yes,resizable=yes,width=1280,height=768");
-}
-
-function setHourlyChartTarget(dataKey) {
-    // daily 차트 선택 효과 제거
-    chart_section.updateBrush(0, {
-        active : dataKey
-    });
-    chart_section.render();
-
-    // hourly 차트 타겟 response로 변경
-    chart_average.updateBrush(0, {
-        active : active_hour,
-        target : [ dataKey ],
-        colors : [ getTargetIndex(dataKey) ]
-    });
-    chart_average.updateWidget(0, {
-        text : "Hourly " + chart_names[dataKey] + " Time (ms)"
-    });
-    chart_average.axis(0).set("y", {
-        domain : function(d) {
-            return getChartTarget(d[dataKey]);
-        }
-    });
-    chart_average.render(true);
 }
