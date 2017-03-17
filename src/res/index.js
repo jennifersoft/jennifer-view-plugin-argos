@@ -10,7 +10,7 @@ var chart_names = {
     download_time: "Download"
 };
 
-var chart_targets = [ "resp_time", "dns_time", "socket_time", "request_time", "first_byte_time", "download_time" ];
+var chart_targets = [ "dns_time", "socket_time", "request_time", "first_byte_time", "download_time" ];
 
 var chart_colors = {
     jennifer: {
@@ -89,7 +89,7 @@ jui.ready([ "ui.combo", "ui.datepicker", "chart.builder", "grid.xtable", "select
             y : {
                 type : "range",
                 domain : function(d) {
-                    return getChartTarget(d.resp_time + d.dns_time + d.socket_time + d.request_time + d.first_byte_time + d.download_time);
+                    return getChartTarget(d.dns_time + d.socket_time + d.request_time + d.first_byte_time + d.download_time);
                 },
                 step : 4
             },
@@ -105,7 +105,6 @@ jui.ready([ "ui.combo", "ui.datepicker", "chart.builder", "grid.xtable", "select
             type : "stackline",
             target : chart_targets,
             colors : chart_colors[window.theme].line,
-            display : "max",
             opacity : 0
         }, {
             type : "stackarea",
@@ -117,8 +116,15 @@ jui.ready([ "ui.combo", "ui.datepicker", "chart.builder", "grid.xtable", "select
             type : "stackline",
             target : chart_targets,
             colors : chart_colors[window.theme].line,
-            display : "max",
             opacity : 1
+        }, {
+            type : "stackline",
+            target : chart_targets,
+            colors : function() {
+                return "transparent";
+            },
+            opacity : 1,
+            display : "max"
         }, {
             type : "focus",
             start : -1,
@@ -134,8 +140,9 @@ jui.ready([ "ui.combo", "ui.datepicker", "chart.builder", "grid.xtable", "select
         }, {
             type : "legend",
             filter : true,
-            brush : [ 0, 1, 2, 3 ],
+            brush : [ 0, 1, 2, 3, 4 ],
             brushSync : true,
+            align : "end",
             format : function(key) {
                 return chart_names[key];
             }
@@ -152,6 +159,21 @@ jui.ready([ "ui.combo", "ui.datepicker", "chart.builder", "grid.xtable", "select
                 if(obj.brush.type == "selectbox") {
                     updateMeasureTable(obj.data.start, obj.data.end);
                 }
+            },
+            "legend.filter": function(targets) {
+                this.axis(0).set("y", {
+                    domain: function(d) {
+                        var total = 0;
+
+                        for(var i = 0; i < targets.length; i++) {
+                            total += d[targets[i]];
+                        }
+
+                        return getChartTarget(total);
+                    }
+                });
+
+                this.render();
             }
         },
         style : {
@@ -289,7 +311,7 @@ function updateDailyChart() {
         chart_average.updateBrush(1, { opacity: 0 });
         chart_average.updateBrush(2, { colors: chart_colors[window.theme].area });
         chart_average.updateBrush(3, { colors: chart_colors[window.theme].line });
-        chart_average.updateBrush(4, { start: -1, end: -1 });
+        chart_average.updateBrush(5, { start: -1, end: -1 });
         chart_average.axis(0).set("x", { domain: getTodayDates() });
         chart_average.axis(0).update(items);
         chart_average.render();
@@ -393,7 +415,7 @@ function setActiveDailyChartEffect(startFocus, endFocus) {
         }
     });
 
-    chart_average.updateBrush(4, {
+    chart_average.updateBrush(5, {
         start: newStartFocus || startFocus,
         end: newEndFocus || endFocus
     });
