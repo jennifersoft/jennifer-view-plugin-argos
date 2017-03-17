@@ -87,7 +87,7 @@
 
         <script id="tpl_none" type="text/template">
             <tr>
-                <td colspan="14" class="none" align="center">Data does not exist.</td>
+                <td colspan="14" class="none" align="center">$i18n.msg2</td>
             </tr>
         </script>
     </div>

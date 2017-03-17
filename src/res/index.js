@@ -14,13 +14,13 @@ var chart_targets = [ "resp_time", "dns_time", "socket_time", "request_time", "f
 
 var chart_colors = {
     jennifer: {
-        area: [ "#cbcfd7", "#dfebfb", "#d7f2eb", "#e8ddf0", "#ffebbb" ],
-        line: [ "#666c9b", "#5d9ced", "#37bc9b", "#c6a9d9", "#ffce54" ],
+        area: [ "#cbcfd7", "#dfebfb", "#d7f2eb", "#e8ddf0", "#fad1cb", "#ffebbb" ],
+        line: [ "#666c9b", "#5d9ced", "#37bc9b", "#c6a9d9", "#f5a397", "#ffce54" ],
         grid: "#dcdcdc"
     },
     dark: {
-        area: [ "#23344e", "#3c5b84", "#265b4e", "#70627a", "#766232" ],
-        line: [ "#666c8b", "#5d9ced", "#37bc9b", "#c6a9d9", "#ffce54" ],
+        area: [ "#23344e", "#3c5b84", "#265b4e", "#70627a", "#8a7673", "#766232" ],
+        line: [ "#666c8b", "#5d9ced", "#37bc9b", "#c6a9d9", "#f5a397", "#ffce54" ],
         grid: "#464646"
     }
 };
@@ -33,7 +33,25 @@ jui.ready([ "ui.combo", "ui.datepicker", "chart.builder", "grid.xtable", "select
         event: {
             change: function(data) {
                 updateSiteInfo();
+                updateDailyChart();
             }
+        }
+    });
+
+    layer_date = datepicker("#datepicker", {
+        titleFormat: "yyyy. MM",
+        format: "yyyy/MM/dd",
+        event: {
+            select: function(date, e) {
+                $("#btn_date").find("span").html(date);
+                $(layer_date.root).hide();
+
+                updateSiteInfo();
+                updateDailyChart();
+            }
+        },
+        tpl: {
+            date: $("#tpl_date").html()
         }
     });
 
@@ -50,20 +68,6 @@ jui.ready([ "ui.combo", "ui.datepicker", "chart.builder", "grid.xtable", "select
         }
     });
 
-    layer_date = datepicker("#datepicker", {
-        titleFormat: "yyyy. MM",
-        format: "yyyy/MM/dd",
-        event: {
-            select: function(date, e) {
-                $("#btn_date").find("span").html(date);
-                $(layer_date.root).hide();
-            }
-        },
-        tpl: {
-            date: $("#tpl_date").html()
-        }
-    });
-
     chart_average = builder("#chart_average", {
         theme : window.theme,
         height : 250,
@@ -76,7 +80,7 @@ jui.ready([ "ui.combo", "ui.datepicker", "chart.builder", "grid.xtable", "select
         axis : [{
             x : {
                 type : "date",
-                domain : getTodayDates(),
+                domain : [],
                 interval : 1000 * 60 * 60,
                 format : "HH",
                 key : "date",
@@ -101,6 +105,7 @@ jui.ready([ "ui.combo", "ui.datepicker", "chart.builder", "grid.xtable", "select
             type : "stackline",
             target : chart_targets,
             colors : chart_colors[window.theme].line,
+            display : "max",
             opacity : 0
         }, {
             type : "stackarea",
@@ -112,6 +117,7 @@ jui.ready([ "ui.combo", "ui.datepicker", "chart.builder", "grid.xtable", "select
             type : "stackline",
             target : chart_targets,
             colors : chart_colors[window.theme].line,
+            display : "max",
             opacity : 1
         }, {
             type : "focus",
@@ -125,6 +131,14 @@ jui.ready([ "ui.combo", "ui.datepicker", "chart.builder", "grid.xtable", "select
             text : window.message.msg1 + "(ms)",
             align : "start",
             dx : 10
+        }, {
+            type : "legend",
+            filter : true,
+            brush : [ 0, 1, 2, 3 ],
+            brushSync : true,
+            format : function(key) {
+                return chart_names[key];
+            }
         }],
         format : function(d) {
             if(typeof(d) == "number") {
@@ -135,7 +149,9 @@ jui.ready([ "ui.combo", "ui.datepicker", "chart.builder", "grid.xtable", "select
         },
         event : {
             click: function(obj) {
-                updateMeasureTable(obj.data.start, obj.data.end);
+                if(obj.brush.type == "selectbox") {
+                    updateMeasureTable(obj.data.start, obj.data.end);
+                }
             }
         },
         style : {
@@ -144,11 +160,14 @@ jui.ready([ "ui.combo", "ui.datepicker", "chart.builder", "grid.xtable", "select
             axisBorderRadius : 5,
             titleFontWeight : "bold",
             lineBorderOpacity : 1,
+            lineBorderWidth : 1,
             areaBackgroundOpacity : 1,
             focusBorderColor : "#9663f4",
             focusBorderWidth : 2,
             focusBackgroundOpacity : 0,
-            gridTickBorderSize : 0
+            gridTickBorderSize : 0,
+            tooltipPointRadius : 0,
+            tooltipPointBorderWidth : 0
         },
         render : false
     });
@@ -194,9 +213,14 @@ jui.ready([ "ui.combo", "ui.datepicker", "chart.builder", "grid.xtable", "select
 });
 
 function updateSiteInfo() {
-    $.get("/plugin/argos/sites", {
-        domain_id: combo_domain.getValue()
-    }, function(jsonStr) {
+    var params = {
+        domain_id: combo_domain.getValue(),
+        customer_id: "jennifer"
+    };
+
+    console.log("사이트 맵 : " + JSON.stringify(params));
+
+    $.get("/plugin/argos/sites", params, function(jsonStr) {
         if(jsonStr == "") return;
 
         var list = eval(jsonStr),
@@ -219,15 +243,26 @@ function updateSiteInfo() {
 
 function updateDailyChart() {
     var sitemap = getSitemapInfo(),
-        dates = getTodayDates();
+        dates = getTodayDates(),
+        params = {
+            domain_id: combo_domain.getValue(),
+            from_time: dates[0] / 1000,
+            to_time: dates[1] / 1000,
+            customer_id: "jennifer"
+        };
 
-    if(sitemap == null) return;
+    if(sitemap == null) {
+        chart_average.axis(0).update([]);
+        chart_average.render();
+        table_detail.reset();
 
-    $.get("/plugin/argos/daily", {
-        domain_id: combo_domain.getValue(),
-        from_time: dates[0] / 1000,
-        to_time: dates[1] / 1000
-    }, function(jsonStr) {
+        return;
+    }
+
+    console.log("구간별 응답시간 : " + JSON.stringify(params));
+    console.log(new Date(params.from_time * 1000), new Date(params.to_time * 1000));
+
+    $.get("/plugin/argos/daily", params, function(jsonStr) {
         if(jsonStr == "") return;
 
         var list = eval(jsonStr),
@@ -255,22 +290,31 @@ function updateDailyChart() {
         chart_average.updateBrush(2, { colors: chart_colors[window.theme].area });
         chart_average.updateBrush(3, { colors: chart_colors[window.theme].line });
         chart_average.updateBrush(4, { start: -1, end: -1 });
+        chart_average.axis(0).set("x", { domain: getTodayDates() });
         chart_average.axis(0).update(items);
         chart_average.render();
     });
 }
 
 function updateMeasureTable(startFocus, endFocus) {
-    var sitemap = getSitemapInfo();
+    var sitemap = getSitemapInfo(),
+        params = {
+            domain_id: combo_domain.getValue(),
+            from_time: startFocus.getTime() / 1000,
+            to_time: endFocus.getTime() / 1000,
+            customer_id: "jennifer"
+        };
 
     if(sitemap == null) return;
 
-    $.get("/plugin/argos/measure", {
-        domain_id: combo_domain.getValue(),
-        from_time: startFocus.getTime() / 1000,
-        to_time: endFocus.getTime() / 1000
-    }, function(jsonStr) {
-        if(jsonStr == "") return;
+    console.log("시간별 테이블 : " + JSON.stringify(params));
+    console.log(new Date(params.from_time * 1000), new Date(params.to_time * 1000));
+
+    $.get("/plugin/argos/measure", params, function(jsonStr) {
+        if(jsonStr == "") {
+            table_detail.reset();
+            return;
+        }
 
         var list = eval(jsonStr),
             items = [];
