@@ -6,6 +6,7 @@ import com.jennifersoft.view.service.perf.TextDataService;
 import com.jennifersoft.view.service.perf.XViewService;
 import com.jennifersoft.view.web.BaseController;
 import org.apache.commons.io.IOUtils;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,10 @@ import org.springframework.web.servlet.ModelAndView;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
 @Controller
 @RequestMapping(value = { "/plugin" })
@@ -50,7 +55,7 @@ public class ArgosController extends BaseController
     private String getArgosSites(@RequestParam short domain_id,
                                                        @RequestParam(required = false, defaultValue="jennifer") String customer_id) throws MalformedURLException {
         URL u = new URL(ARGOS_API_URL + "?func_name=getSiteListForJennifer&domain_id=" + domain_id + "&customer_id=" + customer_id);
-        return getArgosContents(u);
+        return getArgosContents(u, false);
     }
 
     @RequestMapping(value = { "/argos/daily" })
@@ -58,7 +63,7 @@ public class ArgosController extends BaseController
     private String getArgosDailyData(@RequestParam short domain_id, @RequestParam long from_time, @RequestParam long to_time,
                                  @RequestParam(required = false, defaultValue="jennifer") String customer_id) throws MalformedURLException {
         URL u = new URL(ARGOS_API_URL + "?func_name=getMeasureDataSummaryListForJennifer&domain_id=" + domain_id + "&customer_id=" + customer_id + "&from_time=" + from_time + "&to_time=" + to_time);
-        return getArgosContents(u);
+        return getArgosContents(u, false);
     }
 
     @RequestMapping(value = { "/argos/measure" })
@@ -66,10 +71,10 @@ public class ArgosController extends BaseController
     private String getArgosMeasureData(@RequestParam short domain_id, @RequestParam long from_time, @RequestParam long to_time,
                                      @RequestParam(required = false, defaultValue="jennifer") String customer_id) throws MalformedURLException {
         URL u = new URL(ARGOS_API_URL + "?func_name=getMeasureDataListForJennifer&domain_id=" + domain_id + "&customer_id=" + customer_id + "&from_time=" + from_time + "&to_time=" + to_time);
-        return getArgosContents(u);
+        return getArgosContents(u, true);
     }
 
-    private String getArgosContents(URL u) {
+    private String getArgosContents(URL u, boolean isMesaure) {
         String result = "";
 
         try {
@@ -77,7 +82,17 @@ public class ArgosController extends BaseController
             String status = json.getString("resultStatus");
 
             if(status.equals("200")) {
-                return json.getString("resultContent");
+                if(isMesaure) {
+                    JSONArray jsonArray = new JSONArray(json.getString("resultContent"));
+
+                    for(int i = 0; i < jsonArray.length(); i++) {
+                        setJSONRowData(jsonArray.getJSONObject(i));
+                    }
+
+                    return jsonArray.toString();
+                } else {
+                    return json.getString("resultContent");
+                }
             }
         } catch (JSONException e) {
             LogUtil.error(e);
@@ -86,5 +101,43 @@ public class ArgosController extends BaseController
         }
 
         return result;
+    }
+
+    private void setJSONRowData(JSONObject data) throws JSONException {
+        Iterator<String> keys = data.keys();
+
+        while(keys.hasNext()) {
+            String key = keys.next();
+
+            if(data.isNull(key)) {
+                if( key.equals("resp_time") ||
+                        key.equals("dns_time") ||
+                        key.equals("socket_time") ||
+                        key.equals("request_time") ||
+                        key.equals("first_byte_time") ||
+                        key.equals("download_time") ||
+                        key.equals("in_bytes") ||
+                        key.equals("n_total_component") ||
+                        key.equals("n_fail_component")
+                ) {
+                    data.put(key, 0);
+                }
+
+                if(key.equals("tx_id_list")) {
+                    data.put(key, Collections.EMPTY_LIST);
+                }
+            } else {
+                if(key.equals("tx_id_list")) {
+                    JSONArray txidArr = data.getJSONArray(key);
+                    List<String> txids = new ArrayList<String>();
+
+                    for(int j = 0; j < txidArr.length(); j++) {
+                        txids.add(new String("" + txidArr.getLong(j)));
+                    }
+
+                    data.put(key, txids);
+                }
+            }
+        }
     }
 }

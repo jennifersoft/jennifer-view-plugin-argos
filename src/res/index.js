@@ -342,24 +342,17 @@ function updateMeasureTable(startFocus, endFocus) {
             items = [];
 
         for(var i = 0; i < list.length; i++) {
-            var d = list[i];
+            var d = list[i],
+                s1 = (d.site_code == "null") ? null : d.site_code,
+                s2 = (d.step_code == "null") ? null : d.step_code;
 
-            if(d.site_code == sitemap[0] && d.step_code == sitemap[1]) {
-                if(!d.tx_id_list) d.tx_id_list = [];
-                if(!d.resp_time) d.resp_time = 0;
-                if(!d.dns_time) d.dns_time = 0;
-                if(!d.socket_time) d.socket_time = 0;
-                if(!d.request_time) d.request_time = 0;
-                if(!d.first_byte_time) d.first_byte_time = 0;
-                if(!d.download_time) d.download_time = 0;
-                if(!d.in_bytes) d.in_bytes = 0;
-                if(!d.n_total_component) d.n_total_component = 0;
-                if(!d.n_fail_component) d.n_fail_component = 0;
-
+            if(s1 == sitemap[0] && d.s2 == sitemap[1]) {
                 items.push(d);
             }
         }
 
+        table_detail.stime = startFocus.getTime();
+        table_detail.etime = endFocus.getTime();
         table_detail.update(items);
     });
 
@@ -450,14 +443,18 @@ function getTodayDates() {
     ];
 }
 function showServerData(index) {
-    var data = table_detail.get(index).data,
-        stime = layer_date.getTime();
+    var data = table_detail.get(index).data;
+
+    console.log(combo_domain.getValue(),
+        data.tx_id_list,
+        table_detail.stime,
+        table_detail.etime);
 
     jennifer.ui.getXivewPointList(
         combo_domain.getValue(),
         data.tx_id_list,
-        stime,
-        stime + (1000 * 60 * 60)
+        table_detail.stime,
+        table_detail.etime
     );
 }
 
