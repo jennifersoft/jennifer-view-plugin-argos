@@ -1,5 +1,5 @@
-var combo_domain, layer_date, chart_average, table_detail, selectbox_site, range_slider;
-var site_info = {}, active_hour = new Date().getHours();
+var combo_domain, layer_date, chart_average, table_detail, selectbox_site, range_slider, switch_chart;
+var site_info = {};
 
 var chart_names = {
     resp_time: "Response",
@@ -10,23 +10,26 @@ var chart_names = {
     download_time: "Download"
 };
 
-var chart_targets = [ "dns_time", "socket_time", "request_time", "first_byte_time", "download_time" ];
-
-var chart_colors = {
-    jennifer: {
-        area: [ "#cbcfd7", "#dfebfb", "#d7f2eb", "#e8ddf0", "#fad1cb", "#ffebbb" ],
-        line: [ "#666c9b", "#5d9ced", "#37bc9b", "#c6a9d9", "#f5a397", "#ffce54" ],
-        grid: "#dcdcdc"
-    },
-    dark: {
-        area: [ "#23344e", "#3c5b84", "#265b4e", "#70627a", "#8a7673", "#766232" ],
-        line: [ "#666c8b", "#5d9ced", "#37bc9b", "#c6a9d9", "#f5a397", "#ffce54" ],
-        grid: "#464646"
-    }
+var chart_grid_colors = {
+    jennifer: "#dcdcdc",
+    dark: "#464646"
 };
 
-jui.ready([ "ui.combo", "ui.datepicker", "chart.builder", "grid.xtable", "selectbox", "ui.slider" ],
-    function(combo, datepicker, builder, xtable, selectbox, slider) {
+var chart_colors = {};
+
+jui.ready([ "ui.combo", "ui.datepicker", "grid.xtable", "selectbox", "ui.slider", "ui.button" ],
+    function(combo, datepicker, xtable, selectbox, slider, button) {
+
+    switch_chart = button("#switch", {
+        type: "radio",
+        index: 0,
+        event: {
+            change: function(data) {
+                initDailyChartType(data.index == 0 ? true : false);
+                updateDailyChart();
+            }
+        }
+    });
 
     combo_domain = combo("#combo_domain", {
         width: 150,
@@ -66,131 +69,6 @@ jui.ready([ "ui.combo", "ui.datepicker", "chart.builder", "grid.xtable", "select
                 updateDailyChart();
             }
         }
-    });
-
-    chart_average = builder("#chart_average", {
-        theme : window.theme,
-        height : 250,
-        padding : {
-            left : 30,
-            top : 0,
-            bottom : 0,
-            right : 0
-        },
-        axis : [{
-            x : {
-                type : "date",
-                domain : [],
-                interval : 1000 * 60 * 60,
-                format : "HH",
-                key : "date",
-                line : "dashed"
-            },
-            y : {
-                type : "range",
-                domain : function(d) {
-                    return getChartTarget(d.dns_time + d.socket_time + d.request_time + d.first_byte_time + d.download_time);
-                },
-                step : 4
-            },
-            padding : 50
-        }],
-        brush : [{
-            type : "stackarea",
-            target : chart_targets,
-            colors : chart_colors[window.theme].area,
-            line : false,
-            opacity : 0
-        }, {
-            type : "stackline",
-            target : chart_targets,
-            colors : chart_colors[window.theme].line,
-            opacity : 0
-        }, {
-            type : "stackarea",
-            target : chart_targets,
-            colors : chart_colors[window.theme].area,
-            line : false,
-            opacity : 1
-        }, {
-            type : "stackline",
-            target : chart_targets,
-            colors : chart_colors[window.theme].line,
-            opacity : 1
-        }, {
-            type : "stackline",
-            target : chart_targets,
-            colors : function() {
-                return "transparent";
-            },
-            opacity : 1,
-            display : "max"
-        }, {
-            type : "focus",
-            start : -1,
-            end : -1
-        }, {
-            type : "selectbox"
-        }],
-        widget : [{
-            type : "title",
-            text : window.message.msg1 + "(ms)",
-            align : "start",
-            dx : 10
-        }, {
-            type : "legend",
-            brush : [ 0, 1, 2, 3, 4 ],
-            brushSync : true,
-            align : "end",
-            format : function(key) {
-                return chart_names[key];
-            }
-        }],
-        format : function(d) {
-            if(typeof(d) == "number") {
-                return d.toLocaleForJennifer();
-            }
-
-            return d;
-        },
-        event : {
-            click: function(obj) {
-                if(obj.brush.type == "selectbox") {
-                    updateMeasureTable(obj.data.start, obj.data.end);
-                }
-            },
-            "legend.filter": function(targets) {
-                this.axis(0).set("y", {
-                    domain: function(d) {
-                        var total = 0;
-
-                        for(var i = 0; i < targets.length; i++) {
-                            total += d[targets[i]];
-                        }
-
-                        return getChartTarget(total);
-                    }
-                });
-
-                this.render();
-            }
-        },
-        style : {
-            axisBorderColor : chart_colors[window.theme].grid,
-            axisBorderWidth : 1,
-            axisBorderRadius : 5,
-            titleFontWeight : "bold",
-            lineBorderOpacity : 1,
-            lineBorderWidth : 1,
-            areaBackgroundOpacity : 1,
-            focusBorderColor : "#9663f4",
-            focusBorderWidth : 2,
-            focusBackgroundOpacity : 0,
-            gridTickBorderSize : 0,
-            tooltipPointRadius : 0,
-            tooltipPointBorderWidth : 0
-        },
-        render : false
     });
 
     table_detail = xtable("#table_detail", {
@@ -253,6 +131,8 @@ jui.ready([ "ui.combo", "ui.datepicker", "chart.builder", "grid.xtable", "select
     });
 
     updateSiteInfo();
+
+    initDailyChartType(true);
 });
 
 function updateSiteInfo() {
@@ -282,6 +162,214 @@ function updateSiteInfo() {
 
         selectbox_site.update(items);
     });
+}
+
+function initDailyChartType(isResp) {
+    var chart_common_opts = {
+        theme : window.theme,
+        height : 250,
+        padding : {
+            left : 30,
+            top : 0,
+            bottom : 0,
+            right : 0
+        },
+        axis : [{
+            x : {
+                type : "date",
+                domain : [],
+                interval : 1000 * 60 * 60,
+                format : "HH",
+                key : "date",
+                line : "dashed"
+            },
+            y : {
+                type : "range",
+                domain : function(d) {
+                    return getChartTarget(Math.max(d.resp_time, d.dns_time + d.socket_time + d.request_time + d.first_byte_time + d.download_time));
+                },
+                step : 4
+            },
+            padding : 50
+        }],
+        format : function(d) {
+            if(typeof(d) == "number") {
+                return d.toLocaleForJennifer();
+            }
+
+            return d;
+        },
+        event : {
+            click: function(obj) {
+                if(obj.brush.type == "selectbox") {
+                    updateMeasureTable(obj.data.start, obj.data.end);
+                }
+            },
+            "legend.filter": function(targets) {
+                this.axis(0).set("y", {
+                    domain: function(d) {
+                        var total = 0;
+
+                        for(var i = 0; i < targets.length; i++) {
+                            total += d[targets[i]];
+                        }
+
+                        return getChartTarget(total);
+                    }
+                });
+
+                this.render();
+            }
+        },
+        style : {
+            axisBorderColor : chart_grid_colors[window.theme],
+            axisBorderWidth : 1,
+            axisBorderRadius : 5,
+            titleFontWeight : "bold",
+            lineBorderOpacity : 1,
+            lineBorderWidth : 1,
+            areaBackgroundOpacity : 1,
+            focusBorderColor : "#9663f4",
+            focusBorderWidth : 2,
+            focusBackgroundOpacity : 0,
+            gridTickBorderSize : 0,
+            tooltipPointRadius : 0,
+            tooltipPointBorderWidth : 0
+        },
+        render : false
+    };
+
+    if(chart_average != null) {
+        chart_average.destroy();
+        chart_average = null;
+        $("#chart_average").html("");
+    }
+
+    if(isResp) {
+        chart_colors = {
+            jennifer: {
+                area: [ "#ffebbb" ],
+                line: [ "#ffce54" ]
+            },
+            dark: {
+                area: [ "#766232" ],
+                line: [ "#ffce54" ]
+            }
+        };
+
+        chart_average = jui.create("chart.builder", "#chart_average", $.extend(chart_common_opts, {
+            brush : [{
+                type : "area",
+                target : [ "resp_time" ],
+                colors : chart_colors[window.theme].area,
+                line : false,
+                opacity : 0
+            }, {
+                type : "line",
+                target : [ "resp_time" ],
+                colors : chart_colors[window.theme].line,
+                opacity : 0
+            }, {
+                type : "area",
+                target : [ "resp_time" ],
+                colors : chart_colors[window.theme].area,
+                line : false,
+                opacity : 1
+            }, {
+                type : "line",
+                target : [ "resp_time" ],
+                colors : chart_colors[window.theme].line,
+                opacity : 1
+            }, {
+                type : "line",
+                target : [ "resp_time" ],
+                colors : function() {
+                    return "transparent";
+                },
+                opacity : 1,
+                display : "max"
+            }, {
+                type : "focus",
+                start : -1,
+                end : -1
+            }, {
+                type : "selectbox"
+            }],
+            widget : [{
+                type : "title",
+                text : window.message.msg1 + "(ms)",
+                align : "start",
+                dx : 10
+            }]
+        }));
+    } else {
+        var chart_targets = [ "dns_time", "socket_time", "request_time", "first_byte_time", "download_time" ];
+
+        chart_colors = {
+            jennifer: {
+                area: [ "#cbcfd7", "#dfebfb", "#d7f2eb", "#e8ddf0", "#fad1cb" ],
+                line: [ "#666c9b", "#5d9ced", "#37bc9b", "#c6a9d9", "#f5a397" ]
+            },
+            dark: {
+                area: [ "#23344e", "#3c5b84", "#265b4e", "#70627a", "#8a7673" ],
+                line: [ "#666c8b", "#5d9ced", "#37bc9b", "#c6a9d9", "#f5a397" ]
+            }
+        };
+
+        chart_average = jui.create("chart.builder", "#chart_average", $.extend(chart_common_opts, {
+            brush : [{
+                type : "stackarea",
+                target : chart_targets,
+                colors : chart_colors[window.theme].area,
+                line : false,
+                opacity : 0
+            }, {
+                type : "stackline",
+                target : chart_targets,
+                colors : chart_colors[window.theme].line,
+                opacity : 0
+            }, {
+                type : "stackarea",
+                target : chart_targets,
+                colors : chart_colors[window.theme].area,
+                line : false,
+                opacity : 1
+            }, {
+                type : "stackline",
+                target : chart_targets,
+                colors : chart_colors[window.theme].line,
+                opacity : 1
+            }, {
+                type : "stackline",
+                target : chart_targets,
+                colors : function() {
+                    return "transparent";
+                },
+                opacity : 1,
+                display : "max"
+            }, {
+                type : "focus",
+                start : -1,
+                end : -1
+            }, {
+                type : "selectbox"
+            }],
+            widget : [{
+                type : "title",
+                text : window.message.msg1 + "(ms)",
+                align : "start",
+                dx : 10
+            }, {
+                type : "legend",
+                brush : [ 0, 1, 2, 3, 4 ],
+                brushSync : true,
+                align : "end",
+                format : function(key) {
+                    return chart_names[key];
+                }
+            }]
+        }));
+    }
 }
 
 function updateDailyChart() {
@@ -327,6 +415,7 @@ function updateDailyChart() {
                 if(!d.request_time) d.request_time = 0;
                 if(!d.first_byte_time) d.first_byte_time = 0;
                 if(!d.download_time) d.download_time = 0;
+                if(!d.resp_time) d.resp_time = 0;
 
                 items.push(d);
             }

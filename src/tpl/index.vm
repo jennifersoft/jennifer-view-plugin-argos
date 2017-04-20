@@ -32,6 +32,10 @@
             <div id="chart_average"></div>
             <div id="slider_msg">$i18n.range</div>
             <div id="slider" class="slider"></div>
+            <div id="switch" class="group">
+                <a class="btn mini" value="true">$i18n.type1</a>
+                <a class="btn mini" value="false">$i18n.type2</a>
+            </div>
         </div>
     </div>
 
