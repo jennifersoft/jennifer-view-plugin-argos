@@ -36,3 +36,8 @@
     top: 10px;
     right: 10px;
 }
+
+#argos-main #table_detail_tooltip {
+    position: absolute;
+    display: none;
+}

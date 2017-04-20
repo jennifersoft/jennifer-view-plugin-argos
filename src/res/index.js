@@ -15,10 +15,34 @@ var chart_grid_colors = {
     dark: "#464646"
 };
 
+var chart_targets = [ "dns_time", "socket_time", "request_time", "first_byte_time", "download_time" ];
+
+var chart_colors_1 = {
+    jennifer: {
+        area: [ "#d0aaeb" ],
+        line: [ "#a255d7" ]
+    },
+    dark: {
+        area: [ "#5e3879" ],
+        line: [ "#a255d7" ]
+    }
+};
+
+var chart_colors_2 = {
+    jennifer: {
+        area: [ "#ff9a89", "#f4dd7f", "#cabb89", "#7ff1d9", "#9fc9fa" ],
+        line: [ "#ff3513", "#e9bb00", "#957713", "#00e4b4", "#3f94f6" ]
+    },
+    dark: {
+        area: [ "#8d2817", "#826b0d", "#584917", "#0d7f67", "#2d5788" ],
+        line: [ "#ff3513", "#e9bb00", "#957713", "#00e4b4", "#3f94f6" ]
+    }
+};
+
 var chart_colors = {};
 
-jui.ready([ "ui.combo", "ui.datepicker", "grid.xtable", "selectbox", "ui.slider", "ui.button" ],
-    function(combo, datepicker, xtable, selectbox, slider, button) {
+jui.ready([ "ui.combo", "ui.datepicker", "grid.table", "selectbox", "ui.slider", "ui.button" ],
+    function(combo, datepicker, table, selectbox, slider, button) {
 
     switch_chart = button("#switch", {
         type: "radio",
@@ -71,17 +95,17 @@ jui.ready([ "ui.combo", "ui.datepicker", "grid.xtable", "selectbox", "ui.slider"
         }
     });
 
-    table_detail = xtable("#table_detail", {
+    table_detail = table("#table_detail", {
         fields: [
             "equip_name", null, null, "measure_unix_time", "result_status_str",
-            "resp_time", "dns_time", "socket_time", "request_time", "first_byte_time", "download_time",
-            "in_bytes", "n_total_component", "n_fail_component"
+            "in_bytes", "n_total_component", "n_fail_component",
+            "resp_time", null
+
         ],
         resize: true,
-        sort: [ 0, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 ],
-        buffer: "vscroll",
-        rowHeight: 26,
-        scrollHeight: $(window).height() - 600,
+        sort: [ 0, 3, 4, 5, 6, 7, 8 ],
+        // scroll: true,
+        // scrollHeight: $(window).height() - 600,
         tpl: {
             row: $("#tpl_row").html(),
             none: $("#tpl_none").html()
@@ -91,20 +115,19 @@ jui.ready([ "ui.combo", "ui.datepicker", "grid.xtable", "selectbox", "ui.slider"
         }
     });
 
-    var range_dates = getTodayDates();
     range_slider = slider("#slider", {
         type: "double",
-        from: range_dates[0].getTime(),
-        to: range_dates[1].getTime(),
-        min: range_dates[0].getTime(),
-        max: range_dates[1].getTime(),
+        min: 0,
+        max: 1000 * 60 * 60 * 24,
         step: 1000 * 60 * 60,
         tooltip: false,
         event: {
             change: function(data) {
+                var stime = getTodayDates()[0].getTime();
+
                 if(data.from < data.to) {
                     chart_average.axis(0).set("x", {
-                        domain: [new Date(data.from), new Date(data.to)]
+                        domain: [ new Date(stime + data.from), new Date(stime + data.to) ]
                     });
 
                     chart_average.render();
@@ -186,7 +209,7 @@ function initDailyChartType(isResp) {
             y : {
                 type : "range",
                 domain : function(d) {
-                    return getChartTarget(Math.max(d.resp_time, d.dns_time + d.socket_time + d.request_time + d.first_byte_time + d.download_time));
+                    return d.resp_time * 1.2;
                 },
                 step : 4
             },
@@ -246,16 +269,7 @@ function initDailyChartType(isResp) {
     }
 
     if(isResp) {
-        chart_colors = {
-            jennifer: {
-                area: [ "#ffebbb" ],
-                line: [ "#ffce54" ]
-            },
-            dark: {
-                area: [ "#766232" ],
-                line: [ "#ffce54" ]
-            }
-        };
+        chart_colors = chart_colors_1;
 
         chart_average = jui.create("chart.builder", "#chart_average", $.extend(chart_common_opts, {
             brush : [{
@@ -303,18 +317,7 @@ function initDailyChartType(isResp) {
             }]
         }));
     } else {
-        var chart_targets = [ "dns_time", "socket_time", "request_time", "first_byte_time", "download_time" ];
-
-        chart_colors = {
-            jennifer: {
-                area: [ "#cbcfd7", "#dfebfb", "#d7f2eb", "#e8ddf0", "#fad1cb" ],
-                line: [ "#666c9b", "#5d9ced", "#37bc9b", "#c6a9d9", "#f5a397" ]
-            },
-            dark: {
-                area: [ "#23344e", "#3c5b84", "#265b4e", "#70627a", "#8a7673" ],
-                line: [ "#666c8b", "#5d9ced", "#37bc9b", "#c6a9d9", "#f5a397" ]
-            }
-        };
+        chart_colors = chart_colors_2;
 
         chart_average = jui.create("chart.builder", "#chart_average", $.extend(chart_common_opts, {
             brush : [{
@@ -383,8 +386,8 @@ function updateDailyChart() {
         };
 
     // 슬라이더 초기화
-    range_slider.setFromValue(dates[0].getTime());
-    range_slider.setToValue(dates[1].getTime());
+    range_slider.setFromValue(0);
+    range_slider.setToValue(1000 * 60 * 60 * 24);
 
     if(sitemap == null) {
         chart_average.axis(0).update([]);
@@ -468,9 +471,66 @@ function updateMeasureTable(startFocus, endFocus) {
         table_detail.stime = startFocus.getTime();
         table_detail.etime = endFocus.getTime();
         table_detail.update(items);
+
+        setTimeout(function() {
+            updateMeasureCharts(table_detail.list(), 0);
+        }, 100);
     });
 
     setActiveDailyChartEffect(startFocus, endFocus);
+}
+
+function updateMeasureCharts(rows, index) {
+    var data = rows[index].data,
+        target = chart_targets.slice().reverse(),
+        colors = chart_colors_2[window.theme].line.slice().reverse();
+
+    jui.create("chart.builder", "#inner_graph_" + index, {
+        padding: 0,
+        height: 16,
+        axis: {
+            x : {
+                type : "range",
+                domain : function(d) {
+                    return d.dns_time + d.socket_time + d.request_time + d.first_byte_time + d.download_time;
+                },
+                hide: true
+            },
+            y : {
+                type : "block",
+                domain : "",
+                hide: true
+            },
+            data : [ data ]
+        },
+        brush : {
+            type : "fullstackbar",
+            target : target,
+            colors : colors,
+            outerPadding : 0
+        },
+        event : {
+            "mouseover": function(obj, e) {
+                var tooltip = chart_names[obj.dataKey] + " (" + obj.data[obj.dataKey].toLocaleForJennifer() + ")";
+
+                $("#table_detail_tooltip").css({
+                    left: (e.pageX - 135) + "px",
+                    top: (e.pageY - 150) + "px"
+                }).show();
+
+                $("#table_detail_tooltip").find(".message").html(tooltip);
+            },
+            "mouseout": function() {
+                $("#table_detail_tooltip").hide();
+            }
+        }
+    });
+
+    setTimeout(function() {
+        if(index < rows.length - 1) {
+            updateMeasureCharts(rows, index + 1);
+        }
+    }, 100);
 }
 
 function setActiveDailyChartEffect(startFocus, endFocus) {

@@ -30,7 +30,7 @@
         </div>
         <div class="col col-9">
             <div id="chart_average"></div>
-            <div id="slider_msg">$i18n.range</div>
+            <div id="slider_msg" style="color: #a9a9a9;">$i18n.range</div>
             <div id="slider" class="slider"></div>
             <div id="switch" class="group">
                 <a class="btn mini" value="true">$i18n.type1</a>
@@ -40,29 +40,24 @@
     </div>
 
     <div class="row">
-        <div id="table_detail" class="xtable scroll" style="margin-top: 7px;">
-            <table class="table classic">
-                <thead>
-                    <tr>
-                        <th>Probe</th>
-                        <th>Server</th>
-                        <th>Front</th>
-                        <th>Collection Time</th>
-                        <th>Status</th>
-                        <th>Response (ms)</th>
-                        <th>DNS (ms)</th>
-                        <th>Socket (ms)</th>
-                        <th>Request (ms)</th>
-                        <th>First Byte (ms)</th>
-                        <th>Download (ms)</th>
-                        <th>Received packet (byte)</th>
-                        <th>Total Comp (calls)</th>
-                        <th>Fail Comp (calls)</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
+        <table id="table_detail" class="table classic nowrap" style="margin-top: 7px;">
+            <thead>
+                <tr>
+                    <th width="10%">Probe</th>
+                    <th>Server</th>
+                    <th>Front</th>
+                    <th>Collection Time</th>
+                    <th width="15%">Status</th>
+                    <th>Received packet (byte)</th>
+                    <th>Total Comp (calls)</th>
+                    <th>Fail Comp (calls)</th>
+
+                    <th>Response (ms)</th>
+                    <th width="20%">Graph</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
 
         <script id="tpl_row" type="text/template">
             <tr>
@@ -79,21 +74,18 @@
                 </td>
                 <td><!= new Date(measure_time).format("HH:ss") !></td>
                 <td><!= result_status_str !></td>
-                <td align="right"><!= resp_time.toLocaleForJennifer() !></td>
-                <td align="right"><!= dns_time.toLocaleForJennifer() !></td>
-                <td align="right"><!= socket_time.toLocaleForJennifer() !></td>
-                <td align="right"><!= request_time.toLocaleForJennifer() !></td>
-                <td align="right"><!= first_byte_time.toLocaleForJennifer() !></td>
-                <td align="right"><!= download_time.toLocaleForJennifer() !></td>
                 <td align="right"><!= in_bytes.toLocaleForJennifer() !></td>
                 <td align="right"><!= n_total_component.toLocaleForJennifer() !></td>
                 <td align="right"><!= n_fail_component.toLocaleForJennifer() !></td>
+
+                <td align="right"><!= resp_time.toLocaleForJennifer() !></td>
+                <td><div id="inner_graph_<!= row.index !>" class="inner-graph"></div></td>
             </tr>
         </script>
 
         <script id="tpl_none" type="text/template">
             <tr>
-                <td colspan="14" class="none" align="center">$i18n.msg2</td>
+                <td colspan="10" class="none" align="center">$i18n.msg2</td>
             </tr>
         </script>
     </div>
@@ -113,8 +105,9 @@
     <script id="tpl_date" type="text/template">
         <td><!= date !></td>
     </script>
-</div>
 
+    <div id="table_detail_tooltip" class="tooltip left"><div class="anchor"></div><div class="message"></div></div>
+</div>
 <script>
     window.theme = "$user.themeName";
     window.message = {
