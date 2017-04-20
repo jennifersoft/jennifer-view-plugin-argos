@@ -1,17 +1,30 @@
 <?xml version="1.0"?>
 <project name="build">
-	<property name="jennifer.dir" value="/Users/alvin/Documents/Test/jennifer5_build/server.view/bin" />
+	<!-- 플러그인을 추가할 제니퍼 뷰서버 패스 -->
+	<property name="jennifer.dir" value="/Users/alvin/Documents/Test/jennifer5/server.view" />
+	<!-- 플러그인 jar가 생성되는 디렉토리 패스 -->
+	<property name="build.dir" value="out/artifacts/jennifer_view_plugin_argos_jar/jennifer-view-plugin-argos.jar" />
+
+	<property name="jennifer.conf" value="${jennifer.dir}/conf/server_view.conf" />
+	<path id="real.dest.file" path="${build.dir}" />
+	<pathconvert targetos="unix" refid="real.dest.file" property="converted.dest.file"/>
 
 	<target name="stop">
 		<exec dir="${jennifer.dir}" executable="/bin/bash">
-			<arg value="shutdown_view.sh"/>
+			<arg value="bin/shutdown_view.sh"/>
 		</exec>
 		<sleep seconds="1"/>
 	</target>
 	<target name="start">
 		<sleep seconds="1"/>
+		<propertyfile file="${jennifer.conf}">
+			<entry key="plugin_class_path" type="string" operation="=" value="@JAR_FILE@" />
+		</propertyfile>
+		<replace file="${jennifer.conf}" >
+			<replacefilter token="@JAR_FILE@" value="${converted.dest.file}"/>
+		</replace>
 		<exec dir="${jennifer.dir}" executable="/bin/bash">
-			<arg value="startup_view.sh"/>
+			<arg value="bin/startup_view.sh"/>
 		</exec>
 	</target>
 </project>

@@ -10,8 +10,23 @@
 #argos-main .chart-row {
     margin: 20px 0px;
     height: 250px;
+    position: relative;
 }
 
 #argos-main .chart-row #chart_average {
     height: 100%;
+}
+
+#argos-main .chart-row #slider_msg {
+    position: absolute;
+    bottom: 8px;
+    left: 40px;
+    width: 70px;
+}
+
+#argos-main .chart-row #slider {
+    position: absolute;
+    bottom: 0px;
+    left: 100px;
+    width: 200px;
 }

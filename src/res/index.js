@@ -1,4 +1,4 @@
-var combo_domain, layer_date, chart_average, table_detail, selectbox_site;
+var combo_domain, layer_date, chart_average, table_detail, selectbox_site, range_slider;
 var site_info = {}, active_hour = new Date().getHours();
 
 var chart_names = {
@@ -25,8 +25,8 @@ var chart_colors = {
     }
 };
 
-jui.ready([ "ui.combo", "ui.datepicker", "chart.builder", "grid.xtable", "selectbox" ],
-    function(combo, datepicker, builder, xtable, selectbox) {
+jui.ready([ "ui.combo", "ui.datepicker", "chart.builder", "grid.xtable", "selectbox", "ui.slider" ],
+    function(combo, datepicker, builder, xtable, selectbox, slider) {
 
     combo_domain = combo("#combo_domain", {
         width: 150,
@@ -139,7 +139,6 @@ jui.ready([ "ui.combo", "ui.datepicker", "chart.builder", "grid.xtable", "select
             dx : 10
         }, {
             type : "legend",
-            filter : true,
             brush : [ 0, 1, 2, 3, 4 ],
             brushSync : true,
             align : "end",
@@ -214,6 +213,28 @@ jui.ready([ "ui.combo", "ui.datepicker", "chart.builder", "grid.xtable", "select
         }
     });
 
+    var range_dates = getTodayDates();
+    range_slider = slider("#slider", {
+        type: "double",
+        from: range_dates[0].getTime(),
+        to: range_dates[1].getTime(),
+        min: range_dates[0].getTime(),
+        max: range_dates[1].getTime(),
+        step: 1000 * 60 * 60,
+        tooltip: false,
+        event: {
+            change: function(data) {
+                if(data.from < data.to) {
+                    chart_average.axis(0).set("x", {
+                        domain: [new Date(data.from), new Date(data.to)]
+                    });
+
+                    chart_average.render();
+                }
+            }
+        }
+    });
+
     $("#btn_date").on("click", function(e) {
         if($(layer_date.root).css("display") == "none") {
             $(layer_date.root).css({
@@ -272,6 +293,10 @@ function updateDailyChart() {
             to_time: dates[1] / 1000,
             customer_id: "jennifer"
         };
+
+    // 슬라이더 초기화
+    range_slider.setFromValue(dates[0].getTime());
+    range_slider.setToValue(dates[1].getTime());
 
     if(sitemap == null) {
         chart_average.axis(0).update([]);

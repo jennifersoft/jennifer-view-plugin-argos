@@ -30,6 +30,8 @@
         </div>
         <div class="col col-9">
             <div id="chart_average"></div>
+            <div id="slider_msg">$i18n.range</div>
+            <div id="slider" class="slider"></div>
         </div>
     </div>
 
