@@ -487,7 +487,7 @@ function updateMeasureCharts(rows, index) {
 
     jui.create("chart.builder", "#inner_graph_" + index, {
         padding: 0,
-        height: 16,
+        height: 13,
         axis: {
             x : {
                 type : "range",
