@@ -107,6 +107,8 @@ jui.ready([ "ui.combo", "ui.datepicker", "grid.table", "selectbox", "ui.slider",
         ],
         resize: true,
         sort: [ 0, 3, 4, 5, 6, 7, 8 ],
+        sortIndex: 3,
+        sortOrder: "asc",
         // scroll: true,
         // scrollHeight: $(window).height() - 600,
         tpl: {

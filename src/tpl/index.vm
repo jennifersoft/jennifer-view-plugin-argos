@@ -72,7 +72,7 @@
                     <a href="javascript:showFrontData(<!= row.index !>)">Details</a>
                     <! } !>
                 </td>
-                <td><!= new Date(measure_time).format("HH:ss") !></td>
+                <td><!= new Date(measure_unix_time * 1000).format("HH:nn") !></td>
                 <td><!= result_status_str !></td>
                 <td align="right"><!= in_bytes.toLocaleForJennifer() !></td>
                 <td align="right"><!= n_total_component.toLocaleForJennifer() !></td>
