@@ -49,7 +49,7 @@ jui.ready([ "ui.combo", "ui.datepicker", "grid.table", "selectbox", "ui.slider",
         index: 0,
         event: {
             change: function(data) {
-                initDailyChartType(data.index == 0 ? true : false);
+                initDailyChartType(data.index == 0 ? false : true);
                 updateDailyChart();
             }
         }
@@ -155,7 +155,7 @@ jui.ready([ "ui.combo", "ui.datepicker", "grid.table", "selectbox", "ui.slider",
 
     updateSiteInfo();
 
-    initDailyChartType(true);
+    initDailyChartType(false);
 });
 
 function updateSiteInfo() {
@@ -321,15 +321,15 @@ function initDailyChartType(isResp) {
 
         chart_average = jui.create("chart.builder", "#chart_average", $.extend(chart_common_opts, {
             brush : [{
+                type : "stackline",
+                target : chart_targets,
+                colors : chart_colors[window.theme].line,
+                opacity : 0
+            }, {
                 type : "stackarea",
                 target : chart_targets,
                 colors : chart_colors[window.theme].area,
                 line : false,
-                opacity : 0
-            }, {
-                type : "stackline",
-                target : chart_targets,
-                colors : chart_colors[window.theme].line,
                 opacity : 0
             }, {
                 type : "stackarea",
@@ -530,7 +530,7 @@ function updateMeasureCharts(rows, index) {
         if(index < rows.length - 1) {
             updateMeasureCharts(rows, index + 1);
         }
-    }, 100);
+    }, 5);
 }
 
 function setActiveDailyChartEffect(startFocus, endFocus) {
