@@ -19,14 +19,14 @@
 
 #argos-main .chart-row #slider_msg {
     position: absolute;
-    bottom: 8px;
+    bottom: 12px;
     left: 40px;
     width: 70px;
 }
 
 #argos-main .chart-row #slider {
     position: absolute;
-    bottom: 0px;
+    bottom: 4px;
     left: 100px;
     width: 200px;
 }

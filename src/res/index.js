@@ -386,6 +386,7 @@ function initDailyChartType(isResp) {
                 brush : [ 0, 1, 2, 3, 4 ],
                 brushSync : true,
                 align : "end",
+                dy : -5,
                 format : function(key) {
                     return chart_names[key];
                 }
