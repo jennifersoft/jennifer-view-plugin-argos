@@ -40,7 +40,7 @@
     </div>
 
     <div class="row">
-        <table id="table_detail" class="table classic nowrap" style="margin-top: 10px;">
+        <table id="table_detail" class="table classic nowrap" style="margin-top: 15px;">
             <thead>
                 <tr>
                     <th width="10%">Probe</th>
