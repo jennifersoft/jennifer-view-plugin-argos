@@ -114,7 +114,10 @@ jui.ready([ "ui.combo", "ui.datepicker", "grid.table", "selectbox", "ui.slider",
             none: $("#tpl_none").html()
         },
         event: {
-            sort: setSortEff
+            sort: setSortEff,
+            select : function(row, e) {
+                this.select(row.index);
+            }
         }
     });
 

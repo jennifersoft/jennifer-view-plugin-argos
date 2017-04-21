@@ -79,7 +79,7 @@
                 <td align="right"><!= n_fail_component.toLocaleForJennifer() !></td>
 
                 <td align="right"><!= resp_time.toLocaleForJennifer() !></td>
-                <td><div id="inner_graph_<!= row.index !>" class="inner-graph"></div></td>
+                <td style="padding: 5px 5px 3px 5px;"><div id="inner_graph_<!= row.index !>" class="inner-graph"></div></td>
             </tr>
         </script>
 
