@@ -1,5 +1,8 @@
 var combo_domain, layer_date, chart_average, table_detail, selectbox_site, range_slider, switch_chart;
+
 var site_info = {};
+
+var top_height = 300;
 
 var chart_names = {
     resp_time: "Response",
@@ -86,7 +89,7 @@ jui.ready([ "ui.combo", "ui.datepicker", "grid.table", "selectbox", "ui.slider",
         title: window.message.sitemap,
         type: "single",
         width: "100%",
-        height: 250,
+        height: top_height,
         search: true,
         event: {
             select: function(data, e) {
@@ -188,9 +191,11 @@ function updateSiteInfo() {
 }
 
 function initDailyChartType(isResp) {
+    var time = jui.include("util.time");
+
     var chart_common_opts = {
         theme : window.theme,
-        height : 250,
+        height : top_height,
         padding : {
             left : 30,
             top : 0,
@@ -208,9 +213,6 @@ function initDailyChartType(isResp) {
             },
             y : {
                 type : "range",
-                domain : function(d) {
-                    return d.resp_time * 1.2;
-                },
                 step : 4
             },
             padding : 50
@@ -257,7 +259,9 @@ function initDailyChartType(isResp) {
             focusBackgroundOpacity : 0,
             gridTickBorderSize : 0,
             tooltipPointRadius : 0,
-            tooltipPointBorderWidth : 0
+            tooltipPointBorderWidth : 0,
+            crossBorderWidth : 0.5,
+            crossBorderOpacity : 0.5
         },
         render : false
     };
@@ -270,6 +274,10 @@ function initDailyChartType(isResp) {
 
     if(isResp) {
         chart_colors = chart_colors_1;
+
+        chart_common_opts.axis[0].y.domain = function(d) {
+            return d.resp_time * 1.1;
+        };
 
         chart_average = jui.create("chart.builder", "#chart_average", $.extend(chart_common_opts, {
             brush : [{
@@ -314,10 +322,22 @@ function initDailyChartType(isResp) {
                 text : window.message.msg1 + "(ms)",
                 align : "start",
                 dx : 10
+            }, {
+                type : "cross",
+                xFormat : function(d) {
+                    return time.format(d, "hh:mm");
+                },
+                yFormat : function(d) {
+                    return Math.round(d).toLocaleForJennifer();
+                }
             }]
         }));
     } else {
         chart_colors = chart_colors_2;
+
+        chart_common_opts.axis[0].y.domain = function(d) {
+            return (d.dns_time + d.socket_time + d.request_time + d.first_byte_time + d.download_time) * 1.0;
+        };
 
         chart_average = jui.create("chart.builder", "#chart_average", $.extend(chart_common_opts, {
             brush : [{
@@ -343,13 +363,12 @@ function initDailyChartType(isResp) {
                 colors : chart_colors[window.theme].line,
                 opacity : 1
             }, {
-                type : "stackline",
+                type : "stackline", // 사용하지 않음
                 target : chart_targets,
                 colors : function() {
                     return "transparent";
                 },
-                opacity : 1,
-                display : "max"
+                opacity : 0
             }, {
                 type : "focus",
                 start : -1,
@@ -369,6 +388,14 @@ function initDailyChartType(isResp) {
                 align : "end",
                 format : function(key) {
                     return chart_names[key];
+                }
+            }, {
+                type : "cross",
+                xFormat : function(d) {
+                    return time.format(d, "hh:mm");
+                },
+                yFormat : function(d) {
+                    return Math.round(d).toLocaleForJennifer();
                 }
             }]
         }));
