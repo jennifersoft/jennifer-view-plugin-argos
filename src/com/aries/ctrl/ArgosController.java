@@ -1,10 +1,9 @@
-package com.jennifersoft.ctrl;
+package com.aries.ctrl;
 
 import com.aries.view.LogUtil;
 import com.aries.view.service.DomainService;
 import com.aries.view.service.perf.TextDataService;
 import com.aries.view.service.perf.XViewService;
-import com.aries.view.web.BaseController;
 import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
