@@ -1,10 +1,10 @@
 package com.jennifersoft.ctrl;
 
-import com.jennifersoft.view.LogUtil;
-import com.jennifersoft.view.service.DomainService;
-import com.jennifersoft.view.service.perf.TextDataService;
-import com.jennifersoft.view.service.perf.XViewService;
-import com.jennifersoft.view.web.BaseController;
+import com.aries.view.LogUtil;
+import com.aries.view.service.DomainService;
+import com.aries.view.service.perf.TextDataService;
+import com.aries.view.service.perf.XViewService;
+import com.aries.view.web.BaseController;
 import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -29,8 +29,7 @@ import java.util.List;
 
 @Controller
 @RequestMapping(value = { "/plugin" })
-public class ArgosController extends BaseController
-{
+public class ArgosController {
     private static final String ARGOS_API_URL = "http://argos-demo.vivans.net:8080/ArgosDataService";
 
     @Autowired
